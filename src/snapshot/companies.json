@@ -13,10 +13,6 @@
         {
           "code": "30TR_C_ET",
           "note": "Nettarif C"
-        },
-        {
-          "code": "93TR_C_ET",
-          "note": "Nettarif C"
         }
       ]
     },
@@ -79,10 +75,6 @@
         {
           "code": "FE1 NT-01",
           "note": "Nettarif C"
-        },
-        {
-          "code": "FE2 NT-01",
-          "note": "Nettarif C time"
         }
       ]
     },
@@ -135,10 +127,6 @@
       "name": "Konstant Net A/S - 151",
       "codes": [
         {
-          "code": "151-NT01T",
-          "note": "Nettarif C"
-        },
-        {
           "code": "C_FBTNTR_B",
           "note": "Nettarif C"
         }
@@ -148,10 +136,6 @@
       "gln": "5790000683345",
       "name": "Konstant Net A/S - 245",
       "codes": [
-        {
-          "code": "245-NT01T",
-          "note": "Nettarif C"
-        },
         {
           "code": "C_FBTNTR_B",
           "note": "Nettarif C"
@@ -186,14 +170,6 @@
       "gln": "5790001089023",
       "name": "Midtfyns Elforsyning A.m.b.A",
       "codes": [
-        {
-          "code": "NT15000",
-          "note": "Nettarif C"
-        },
-        {
-          "code": "NT15001",
-          "note": "Nettarif C"
-        },
         {
           "code": "TNT15000",
           "note": "Nettarif C"
@@ -252,10 +228,6 @@
       "codes": [
         {
           "code": "5NCFF",
-          "note": "Nettarif C"
-        },
-        {
-          "code": "5NCFP",
           "note": "Nettarif C"
         }
       ]
@@ -329,10 +301,6 @@
       "name": "Tarm Elværk Net A/S",
       "codes": [
         {
-          "code": "TEV-NT-01",
-          "note": "Nettarif C"
-        },
-        {
           "code": "TEV-NT-01T",
           "note": "Nettarif C"
         }
@@ -390,10 +358,6 @@
       "gln": "5790001089375",
       "name": "Zeanet A/S",
       "codes": [
-        {
-          "code": "43100",
-          "note": "Nettarif C"
-        },
         {
           "code": "43110",
           "note": "Nettarif C"

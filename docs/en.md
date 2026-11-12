@@ -54,9 +54,12 @@ For each half hour, in DKK, VAT included:
 - **Spot**: DayAheadPrices of the area, 15-minute prices (since 1 October
   2025), the mean of the two quarters of the half hour (Gladys sends
   half-hourly readings: the consumption is taken as even inside them).
-- A company with several household tariff codes ("NT-01", "NT-10"...): when
-  they give the same price, it is used; when they differ, the status asks for
-  the **Charge code** and names the choices.
+- A company with several household tariff codes ("NT-01", "NT-10"...): without
+  a **Charge code**, they are used only when they give the same price every
+  hour of every day DataHub holds for them (and cover the same days). As soon
+  as they differ anywhere, including one code published for a next season
+  and not the other, the status asks for the **Charge code** and names the
+  choices: a code is never picked because it is the only one with a price.
 
 What Gladys cannot express, said plainly:
 
@@ -75,10 +78,14 @@ interval gets no cost and Gladys asks again.
 - Tariffs: dataset **DatahubPricelist**, read for the companies your
   contracts use and for Energinet, then again **once a day** (a read that
   fails is tried again after an hour; the tariffs held stay in use, and the
-  status says when they were not read again for 3 days). Kept in /data.
+  status says when they were not read again for 3 days). Kept in /data: the
+  periods of the last 400 days only, so an interval older than 400 days gets
+  no cost (never asked again for it).
 - Spot prices: dataset **DayAheadPrices**, today's and, from 13:00, tomorrow's,
-  plus any day Gladys asks for (31 days in one request at most). A day is
-  kept only whole; kept 62 days in /data.
+  plus any day Gladys asks for, history included (31 days in one request at
+  most). A day is kept only whole, in /data, for 62 days after it was read
+  (whatever its date: a month read for a recalculation is priced from there,
+  not read again), 800 days per area at most.
 - A 429 (too many requests) or a 5xx pauses every request for what the API
   asks, at least 2 minutes, doubled for each one in a row up to 6 hours; the
   pause is kept across a restart and shown by the status.

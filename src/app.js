@@ -49,6 +49,7 @@ import {
   ENERGINET_CODES,
   ENERGINET_GLN,
   chargeAt,
+  chargesAgree,
   checkCharge,
   parsePricelist,
   pricelistUrl,
@@ -133,9 +134,11 @@ export class EnergiDataServiceApp {
     /** Tariff keys being read. */
     this.inFlight = new Set();
     this.draining = null;
+    /** Cut by stop(): the request on the wire with it. */
+    this.aborter = new AbortController();
     /** id -> short problem text of the last pricing (cleared by a success). */
     this.problems = new Map();
-    this.state = { refreshAt: 0, pause: null };
+    this.state = { refreshAt: 0, pause: null, lastRequestAt: 0 };
     /** Monotonic end of the pause. */
     this.pauseEnd = undefined;
     this.loaded = { state: false, tariffs: false, spot: false };
@@ -155,6 +158,7 @@ export class EnergiDataServiceApp {
 
   setTimer(name, ms, fn) {
     this.clearTimer(name);
+    if (this.stopped) return;
     const gen = this.gen;
     this.timerIds[name] = this.timers.setTimeout(
       () => {
@@ -228,6 +232,10 @@ export class EnergiDataServiceApp {
     this.clearAllTimers();
     const gen = ++this.gen;
     this.stopped = false;
+    if (this.aborter.signal.aborted) this.aborter = new AbortController();
+    // A loop of an earlier start ends on its own (stale generation): it never
+    // holds the queues of this one.
+    this.draining = null;
     await this.loadStores();
     if (this.stale(gen)) return;
     await this.loadContracts();
@@ -249,6 +257,8 @@ export class EnergiDataServiceApp {
       wait.resolve();
     }
     this.sleeps.clear();
+    // The request on the wire is cut: nothing it answers is used.
+    this.aborter.abort();
     this.spotQueue.clear();
     this.tariffQueue.clear();
     await Promise.all(Object.values(this.stores).map((s) => s.flush?.())).catch(() => {});
@@ -318,6 +328,13 @@ export class EnergiDataServiceApp {
   /** What /data held, merged under what this process already knows. */
   merge(name, data) {
     if (name === 'state') {
+      // The last request before a restart: the gap holds across it.
+      const last = Number(data.lastRequestAt);
+      const ago = this.now() - last;
+      if (Number.isFinite(last) && ago >= 0 && ago < REQUEST_GAP) {
+        this.state.lastRequestAt = last;
+        this.lane.last = Math.max(this.lane.last, this.monotonic() - ago);
+      }
       const refreshAt = Number(data.refreshAt);
       // A due time far in the future is not trusted (clock changed): due now.
       this.state.refreshAt =
@@ -465,24 +482,22 @@ export class EnergiDataServiceApp {
       this.wantTariff(company.gln);
       throw new PriceMissing(`tariffs of ${company.name} not read yet`);
     }
-    const values = [];
-    for (const code of codes) {
-      const v = chargeAt(held.codes[code], t);
-      if (v !== undefined) values.push({ code, v });
-    }
-    if (values.length === 0) {
-      throw new PriceMissing(`no tariff of ${company.name} for ${t.date}`);
-    }
-    if (values.some(({ v }) => Math.abs(v - values[0].v) > 1e-9)) {
+    // Without a code given, the codes of the company are used only when they
+    // agree over every period held (the same price every hour of every day,
+    // the same days without a price): never the one that happens to have a
+    // price on a date, since the other may be the contract's.
+    if (codes.length > 1 && !chargesAgree(codes.map((c) => held.codes[c]))) {
       throw new CodeError(
         company.name,
-        values.map(({ code }) => {
+        codes.map((code) => {
           const note = held.codes[code].note;
           return note ? `${code} (${note})` : code;
         }),
       );
     }
-    return values[0].v;
+    const v = chargeAt(held.codes[codes[0]], t);
+    if (v === undefined) throw new PriceMissing(`no tariff of ${company.name} for ${t.date}`);
+    return v;
   }
 
   /** Energinet's charges (DKK/kWh without VAT) at a local time; throws when unknown. */
@@ -767,7 +782,7 @@ export class EnergiDataServiceApp {
       missing.filter((d) => !days[d]),
     );
     if (Object.keys(days).length > 0) {
-      pruneSpot(this.spot, local(this.now()).date);
+      pruneSpot(this.spot, this.now());
       await this.save('spot');
     }
   }
@@ -796,11 +811,15 @@ export class EnergiDataServiceApp {
       }
       const gap = lane.last + REQUEST_GAP - this.monotonic();
       if (gap > 0) await this.sleep(gap);
-      // Stopped while waiting its turn: nothing leaves after stop().
+      // Stopped while waiting its turn: nothing leaves after stop(), nothing
+      // is written to /data for it.
       if (this.stopped) throw new HttpError('stopped', 'integration stopped');
       // A pause that began while this request waited its turn.
       if (this.pauseOf()) throw new HttpError('paused', 'Energi Data Service paused');
       lane.last = this.monotonic();
+      // The time of the attempt in /data before it leaves: a restart keeps the gap.
+      this.state.lastRequestAt = this.now();
+      this.save('state').catch(() => {});
       try {
         const result = await getJson(this.fetchImpl, url, {
           accept: 'application/json',
@@ -808,7 +827,9 @@ export class EnergiDataServiceApp {
           timeoutMs,
           now: this.now,
           timers: this.timers,
+          signal: this.aborter.signal,
         });
+        if (this.stopped) throw new HttpError('stopped', 'integration stopped');
         if (this.state.pause) {
           this.state.pause = null;
           this.pauseEnd = undefined;
@@ -817,6 +838,7 @@ export class EnergiDataServiceApp {
         return result;
       } catch (err) {
         if (
+          !this.stopped &&
           err instanceof HttpError &&
           err.code === 'status' &&
           (err.status === 429 || err.status >= 500)
@@ -921,6 +943,8 @@ export class EnergiDataServiceApp {
       }
       return false;
     }
+    // Stopped meanwhile: nothing kept, nothing written.
+    if (this.stopped) return false;
     const parsed = parsePricelist(answer.data, { gln, codes, since });
     if (!parsed) {
       this.log.warn(`Tariffs of ${key}: answer refused by the checks, the previous ones stay`);

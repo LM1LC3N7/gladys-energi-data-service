@@ -112,7 +112,7 @@ test('no key starts with gladys_; no secret at all; nothing said encrypted', () 
     'CLAUDE.md',
     'src/i18n.js',
   ]) {
-    assert.doesNotMatch(read(file), /chiffr|encrypt|hachage/i, file);
+    assert.doesNotMatch(read(file), /chiffré|chiffrement|encrypt|hachage/i, file);
   }
 });
 

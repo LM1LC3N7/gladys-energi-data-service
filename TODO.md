@@ -38,9 +38,13 @@
 - The API's `start` filters on ValidFrom: the tariffs are read over their
   whole history (filtered by GLN and code) and only the periods of the last
   400 days kept.
-- Several household codes for one company: used when they agree on the
-  price at that hour, else the contract must give its charge code (never a
-  guess).
+- Several household codes for one company: used without a code only when
+  they agree over every period held (same prices, same days), else the
+  contract must give its charge code (never a guess, review r1). Ended codes
+  are left out of the directory by `scripts/snapshot.mjs`.
+- Spot days kept 62 days after their read (not their date), 800 per area:
+  a recalculation of the history is read once (review r1). Tariff periods
+  kept 400 days.
 - The pricing and the current price never make a request: a missing value
   fails at once and is read in the background (one request a minute).
 - Subscriptions (D01) not read: a fixed monthly input (the core bills fixed

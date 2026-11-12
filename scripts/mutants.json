@@ -42,16 +42,10 @@
     "to": "if (v === undefined) continue;"
   },
   {
-    "name": "codes that differ refused",
-    "file": "src/app.js",
-    "from": "if (values.some(({ v }) => Math.abs(v - values[0].v) > 1e-9)) {",
-    "to": "if (false) {"
-  },
-  {
     "name": "no tariff for the date throws",
     "file": "src/app.js",
-    "from": "if (values.length === 0) {\n      throw new PriceMissing",
-    "to": "if (values.length === -1) {\n      throw new PriceMissing"
+    "from": "if (v === undefined) throw new PriceMissing(`no tariff of ${company.name} for ${t.date}`);",
+    "to": "if (v === undefined) return 0;"
   },
   {
     "name": "unknown GLN needs a code",
@@ -68,8 +62,8 @@
   {
     "name": "nothing after stop",
     "file": "src/app.js",
-    "from": "if (this.stopped) throw new HttpError('stopped', 'integration stopped');",
-    "to": "if (false) throw new HttpError('stopped', 'integration stopped');"
+    "from": "      if (this.stopped) throw new HttpError('stopped', 'integration stopped');\n      // A pause",
+    "to": "      // A pause"
   },
   {
     "name": "pause checked before a request",
@@ -220,5 +214,83 @@
     "file": "src/app.js",
     "from": "if (this.pauseOf()) throw new HttpError('paused', 'Energi Data Service paused');",
     "to": "if (false) throw new HttpError('paused', 'Energi Data Service paused');"
+  },
+  {
+    "name": "codes compared over every period",
+    "file": "src/app.js",
+    "from": "if (codes.length > 1 && !chargesAgree(codes.map((c) => held.codes[c]))) {",
+    "to": "if (false) {"
+  },
+  {
+    "name": "agreement needs the same days",
+    "file": "src/datahub.js",
+    "from": "if (v !== first) return false;",
+    "to": "continue;"
+  },
+  {
+    "name": "spot kept by read age, not date",
+    "file": "src/spot.js",
+    "from": "if (!(day.at >= limit)) delete days[date];",
+    "to": "if (Date.parse(`${date}T00:00:00Z`) < limit) delete days[date];"
+  },
+  {
+    "name": "spot days capped per area",
+    "file": "src/spot.js",
+    "from": "for (const [date] of kept.slice(SPOT_MAX_DAYS)) delete days[date];",
+    "to": ""
+  },
+  {
+    "name": "spot from /data: day length",
+    "file": "src/spot.js",
+    "from": "day.prices.length !== (to - from) / QUARTER",
+    "to": "false"
+  },
+  {
+    "name": "spot: records bounded",
+    "file": "src/spot.js",
+    "from": "if (answer.records.length > dates.length * MAX_SLOTS) return out;",
+    "to": ""
+  },
+  {
+    "name": "spot: price bounded",
+    "file": "src/spot.js",
+    "from": "Math.abs(mwh) > MAX_PRICE_MWH || day.has(start)",
+    "to": "day.has(start)"
+  },
+  {
+    "name": "no status after stop",
+    "file": "src/app.js",
+    "from": "  async updateStatus() {\n    if (this.stopped) return;",
+    "to": "  async updateStatus() {"
+  },
+  {
+    "name": "stop aborts the request",
+    "file": "src/app.js",
+    "from": "    this.aborter.abort();\n",
+    "to": ""
+  },
+  {
+    "name": "no pause from a late answer after stop",
+    "file": "src/app.js",
+    "from": "          !this.stopped &&\n",
+    "to": ""
+  },
+  {
+    "name": "no timer once stopped",
+    "file": "src/app.js",
+    "from": "    this.clearTimer(name);\n    if (this.stopped) return;",
+    "to": "    this.clearTimer(name);"
+  },
+  {
+    "name": "gap kept across a restart",
+    "file": "src/app.js",
+    "from": "this.lane.last = Math.max(this.lane.last, this.monotonic() - ago);",
+    "to": ""
+  },
+  {
+    "name": "gap time from /data bounded",
+    "file": "src/app.js",
+    "from": "ago >= 0 && ago < REQUEST_GAP",
+    "to": "true"
   }
 ]

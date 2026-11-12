@@ -49,7 +49,10 @@ export const SPOT_DAYS_PER_ASK = 40;
 export const SPOT_DAYS_PER_CALL = 31;
 export const SPOT_QUEUE_MAX = 80;
 export const SPOT_FIRST_DAY = '2025-10-01';
+// A spot day is kept SPOT_KEEP_DAYS after its read (not after its date), at
+// most SPOT_MAX_DAYS per area (about 2 MB of /data for two areas).
 export const SPOT_KEEP_DAYS = 62;
+export const SPOT_MAX_DAYS = 800;
 
 // The device states (price now) every quarter of an hour.
 export const TICK = 15 * MINUTE;

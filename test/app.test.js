@@ -806,3 +806,171 @@ test('a pause that begins while a request waits its turn stops it', async () => 
   assert.equal(outcome, 'paused');
   assert.equal(env.net.calls.filter((c) => c.url.endsWith('?y')).length, 0);
 });
+
+// --- review r1 ------------------------------------------------------------------------------
+
+test('two codes, one published ahead (the Cerius case): the code is asked, never guessed', async () => {
+  const VEKSEL = '5790001088217';
+  const net = apiNet({
+    extra: {
+      [PRICELIST]: (url) => {
+        const { gln } = askedOf(url);
+        if (gln === ENERGINET_GLN) return json(energinetAnswer());
+        return json(
+          pricelist([
+            record({ gln, code: 'NT-01', from: '2026-10-01', to: '2026-11-20', prices: 0.3 }),
+            record({ gln, code: 'NT-01', from: '2026-11-20', to: null, prices: 0.3 }),
+            record({ gln, code: 'NT-10', from: '2026-10-01', to: '2026-11-20', prices: 0.3 }),
+          ]),
+        );
+      },
+    },
+  });
+  const inputs = { grid_company: VEKSEL, supply: 'grid_only' };
+  const env = await warm({ net, contracts: [contract(inputs)] });
+  const ask = (iso, extra = {}) =>
+    env.app.energyPrice(priceRequest(intervalsFrom(iso, 1), { inputs: { ...inputs, ...extra } }));
+  // Neither the day only NT-01 covers, nor a day both agree on.
+  await assert.rejects(ask('2026-11-25T08:00:00Z'), /fill "Charge code" with one of: NT-01/);
+  await assert.rejects(ask('2026-11-10T08:00:00Z'), /fill "Charge code"/);
+  assert.match(statusText(env), /Problem: Veksel A\/S has several household tariffs/);
+  close(
+    (await ask('2026-11-25T08:00:00Z', { charge_code: 'NT-01' }))[0].cost,
+    (0.3 + 0.098) * 1.25,
+  );
+  await assert.rejects(ask('2026-11-25T08:00:00Z', { charge_code: 'NT-10' }), /no tariff of/);
+});
+
+test('spot history older than 62 days: read once, priced, kept 62 days after its read', async () => {
+  const net = apiNet({
+    extra: {
+      [PRICELIST]: (url) => {
+        const { gln } = askedOf(url);
+        if (gln === ENERGINET_GLN) return json(energinetAnswer());
+        return json(pricelist([record({ from: '2026-01-01', to: null, prices: 0.2 })]));
+      },
+    },
+  });
+  const env = await warm({ net });
+  // August 2026: 31 days, 3 months before today.
+  const intervals = intervalsFrom('2026-07-31T22:00:00Z', 31 * 48);
+  const spotCalls = () => net.calls.filter((c) => c.url.startsWith(DAYAHEAD)).length;
+  const before = spotCalls();
+  await assert.rejects(env.app.energyPrice(priceRequest(intervals)), /no DK2 spot price/);
+  await env.advance(2 * REQUEST_GAP);
+  assert.equal(spotCalls(), before + 1);
+  assert.equal((await env.app.energyPrice(priceRequest(intervals))).length, 31 * 48);
+  // Recalculated again days later: priced from /data-kept days, never read again.
+  await env.advance(10 * DAY);
+  assert.equal((await env.app.energyPrice(priceRequest(intervals))).length, 31 * 48);
+  await env.advance(2 * REQUEST_GAP);
+  const afterTen = net.calls.filter(
+    (c) => c.url.startsWith(DAYAHEAD) && datesOf(c.url).includes('2026-08-15'),
+  ).length;
+  assert.equal(afterTen, 1);
+  assert.ok(env.stores.spot.data.areas.DK2['2026-08-15']);
+});
+
+test('updateStatus after stop sends nothing', async () => {
+  const env = await warm();
+  await env.app.stop();
+  const sent = [];
+  env.gladys.setConnectionStatus = async (...args) => sent.push(args);
+  env.app.lastStatus = undefined;
+  await env.app.updateStatus();
+  assert.deepEqual(sent, []);
+});
+
+test('stop cuts the request on the wire; its late 429 neither pauses nor arms a timer', async () => {
+  let release;
+  let signal;
+  // A server that answers late whatever the abort says.
+  const net = createNet({
+    [`https://api.energidataservice.dk/`]: (url, init) =>
+      new Promise((resolve) => {
+        signal = init.signal;
+        release = () =>
+          resolve(json({ statusCode: 429, message: 'Try again in 600 seconds.' }, 429));
+      }),
+  });
+  const env = await setup({ net });
+  await env.run(SECOND);
+  assert.equal(net.calls.length, 1);
+  await env.app.stop();
+  assert.equal(signal.aborted, true);
+  release();
+  await settle();
+  assert.equal(env.app.state.pause, null);
+  assert.equal(env.pending.size, 0);
+});
+
+test('restart: the gap since the last request holds across it', async () => {
+  const stores = memoryStores({ state: { lastRequestAt: NOW - 10 * SECOND } });
+  const env = await setup({ net: apiNet(), stores });
+  const times = [];
+  const fetch = env.net.fetch;
+  env.app.fetchImpl = (...args) => {
+    times.push(env.clock.now);
+    return fetch(...args);
+  };
+  await env.run(WARM);
+  assert.ok(times[0] - NOW >= REQUEST_GAP - 10 * SECOND - 1, `first after ${times[0] - NOW} ms`);
+  // A time in /data in the future or long ago is not a reason to wait.
+  const env2 = await setup({
+    net: apiNet(),
+    stores: memoryStores({ state: { lastRequestAt: NOW + HOUR } }),
+  });
+  await env2.run(SECOND);
+  assert.equal(env2.net.calls.length, 1);
+});
+
+test('once stopped, no timer is armed (a late callback never wakes the app)', async () => {
+  const env = await warm();
+  await env.app.stop();
+  let ran = false;
+  env.app.setTimer('late', 0, () => {
+    ran = true;
+  });
+  env.app.armResume(MINUTE);
+  assert.equal(env.pending.size, 0);
+  await env.advance(2 * MINUTE);
+  assert.equal(ran, false);
+});
+
+test('stop then a new start: a request of the earlier run never leaves, the gap holds', async () => {
+  const env = await setup({ net: apiNet() });
+  const times = [];
+  const fetch = env.net.fetch;
+  env.app.fetchImpl = (...args) => {
+    times.push(env.clock.now);
+    return fetch(...args);
+  };
+  await env.run(SECOND);
+  // Energinet read; Radius waits its turn. Stopped and started again at once.
+  await env.app.stop();
+  await env.app.connected();
+  await env.advance(WARM);
+  for (let i = 1; i < times.length; i += 1) {
+    assert.ok(times[i] - times[i - 1] >= REQUEST_GAP - 1, `gap ${times[i] - times[i - 1]}`);
+  }
+});
+
+test('a reconnection without stop: the tariffs are not asked twice', async () => {
+  const env = await setup({ net: apiNet() });
+  await env.run(SECOND);
+  // Energinet read; Radius waits its turn. Gladys says "connected" again.
+  await env.app.connected();
+  await env.advance(WARM);
+  const radius = env.net.calls.filter((c) => askedOf(c.url).gln === RADIUS);
+  assert.equal(radius.length, 1);
+});
+
+test('stop while a request waits its turn: it never leaves nor writes /data', async () => {
+  const env = await setup({ net: apiNet() });
+  await env.run(SECOND);
+  const saves = env.stores.state.saves;
+  await env.app.stop();
+  await env.advance(5 * REQUEST_GAP);
+  assert.equal(env.net.calls.length, 1);
+  assert.equal(env.stores.state.saves, saves);
+});

@@ -66,9 +66,13 @@ export async function getText(
     accept = 'application/json',
     now = Date.now,
     timers = { setTimeout, clearTimeout },
+    signal,
   },
 ) {
   const controller = new AbortController();
+  // The caller's signal (the app's stop) cuts the request too.
+  if (signal?.aborted) throw new HttpError('stopped', 'request cut');
+  signal?.addEventListener?.('abort', () => controller.abort(), { once: true });
   const timer = timers.setTimeout(() => controller.abort(), timeoutMs);
   try {
     let response;

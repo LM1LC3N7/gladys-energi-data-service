@@ -20,7 +20,7 @@ l’API. Signalez toute différence avec votre facture.
    **« Energi Data Service (Danemark) : tarifs et spot »** et rattachez votre
    compteur :
    - **Gestionnaire de réseau** : son nom (« Radius », « N1 A/S - 131 ») ou
-     son GLN (13 caractères, sur votre facture). La liste est plus bas.
+     son GLN (13 chiffres, sur votre facture). La liste est plus bas.
    - **Code du tarif** : laissez vide, sauf si le statut le demande.
    - **Fourniture** : `grid_only` (tarifs et elafgift seuls) ou `spot` (plus
      le prix spot au quart d’heure et la marge du fournisseur).
@@ -60,8 +60,12 @@ Pour chaque demi-heure, en DKK, TVA comprise :
   envoie des relevés à la demi-heure : la consommation y est supposée
   régulière).
 - Gestionnaire avec plusieurs codes de tarif résidentiel (« NT-01 »,
-  « NT-10 »…) : s’ils donnent le même prix, il est utilisé ; s’ils diffèrent,
-  le statut demande le **Code du tarif** et cite les choix.
+  « NT-10 »…) : sans **Code du tarif**, ils ne servent que s’ils donnent le
+  même prix à chaque heure de chaque jour que DataHub contient pour eux (et
+  couvrent les mêmes jours). Dès qu’ils diffèrent quelque part, y compris un
+  code publié pour la saison suivante et pas l’autre, le statut demande le
+  **Code du tarif** et cite les choix : un code n’est jamais pris parce qu’il
+  est le seul à avoir un prix.
 
 Ce que Gladys ne sait pas exprimer, dit clairement :
 
@@ -83,10 +87,13 @@ n’a pas de coût et Gladys redemande.
   contrats et pour Energinet, puis **une fois par jour** (une lecture en échec
   est retentée après une heure ; les tarifs détenus restent utilisés, et le
   statut signale quand ils n’ont pas été relus depuis 3 jours). Gardés dans
-  /data.
+  /data : seulement les périodes des 400 derniers jours, donc un intervalle
+  de plus de 400 jours n’a pas de coût (et n’est pas redemandé).
 - Prix spot : jeu **DayAheadPrices**, ceux du jour et, dès 13:00, ceux du
-  lendemain, plus tout jour que Gladys demande (31 jours par requête au plus).
-  Un jour n’est gardé qu’entier ; gardés 62 jours dans /data.
+  lendemain, plus tout jour que Gladys demande, historique compris (31 jours
+  par requête au plus). Un jour n’est gardé qu’entier, dans /data, 62 jours
+  après sa lecture (quelle que soit sa date : un mois lu pour un recalcul est
+  tarifé depuis là, sans relecture), 800 jours par zone au plus.
 - Un 429 (trop de requêtes) ou un 5xx met en pause toutes les requêtes pour
   la durée demandée par l’API, 2 minutes au moins, doublée à chaque fois de
   suite jusqu’à 6 heures ; la pause survit à un redémarrage et le statut

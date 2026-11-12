@@ -85,7 +85,7 @@
             },
             "description": {
               "en": "Its name (\"Radius\", \"N1 A/S - 131\") or its GLN (13 digits, on your bill). The list is in the documentation.",
-              "fr": "Son nom (« Radius », « N1 A/S - 131 ») ou son GLN (13 caractères, sur votre facture). La liste est dans la documentation."
+              "fr": "Son nom (« Radius », « N1 A/S - 131 ») ou son GLN (13 chiffres, sur votre facture). La liste est dans la documentation."
             }
           },
           {

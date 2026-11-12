@@ -8,7 +8,7 @@
 // the cache object.
 // -----------------------------------------------------------------------------
 
-import { API_BASE, SPOT_KEEP_DAYS } from './constants.js';
+import { API_BASE, SPOT_KEEP_DAYS, SPOT_MAX_DAYS } from './constants.js';
 import { AREA_OPTIONS } from './contract.js';
 import { MINUTE, local, localMidnight, nextDate } from './time.js';
 
@@ -112,13 +112,18 @@ export function priceIn(day, ms) {
   return i >= 0 && i < day.prices.length ? day.prices[i] : undefined;
 }
 
-/** Drops the days older than SPOT_KEEP_DAYS before `today` ("YYYY-MM-DD"). */
-export function pruneSpot(cache, today) {
-  const limit = new Date(Date.parse(`${today}T00:00:00Z`) - SPOT_KEEP_DAYS * 86_400_000)
-    .toISOString()
-    .slice(0, 10);
+/**
+ * Drops the days read more than SPOT_KEEP_DAYS ago (by the time of their
+ * read, not their date: a month read for a recalculation of the contract's
+ * history stays as long as a recent one), then the oldest read beyond
+ * SPOT_MAX_DAYS per area.
+ */
+export function pruneSpot(cache, nowMs) {
+  const limit = nowMs - SPOT_KEEP_DAYS * 86_400_000;
   for (const days of Object.values(cache)) {
-    for (const date of Object.keys(days)) if (date < limit) delete days[date];
+    for (const [date, day] of Object.entries(days)) if (!(day.at >= limit)) delete days[date];
+    const kept = Object.entries(days).sort((a, b) => b[1].at - a[1].at || (a[0] < b[0] ? 1 : -1));
+    for (const [date] of kept.slice(SPOT_MAX_DAYS)) delete days[date];
   }
   return cache;
 }

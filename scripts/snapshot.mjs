@@ -19,6 +19,7 @@ const pkg = JSON.parse(
 );
 const UA = `gladys-energi-data-service/${pkg.version} (+https://github.com/LM1LC3N7/gladys-energi-data-service)`;
 const since = `${new Date().getUTCFullYear() - 1}-01-01`;
+const today = new Date().toISOString().slice(0, 10);
 const NOTES = ['Nettarif C', 'Nettarif C time', 'Nettarif C Time', 'Nettarif C tid'];
 const NOTE = /^nettarif c( time)?$/i;
 const ENERGINET = '5790000432752';
@@ -58,10 +59,14 @@ const out = {
     .map((c) => ({
       gln: c.gln,
       name: c.name,
+      // A code whose last period has ended is gone for good: left out (a
+      // contract without a code compares every code listed).
       codes: [...c.codes.values()]
+        .filter(({ last }) => last > today)
         .map(({ code, note }) => ({ code, note }))
         .sort((a, b) => a.code.localeCompare(b.code)),
     }))
+    .filter((c) => c.codes.length > 0)
     .sort((a, b) => a.name.localeCompare(b.name, 'da')),
 };
 writeFileSync(

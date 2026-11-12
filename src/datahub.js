@@ -141,3 +141,34 @@ export function chargeAt(charge, { date, h }) {
   }
   return undefined;
 }
+
+/**
+ * Whether charges give the same price every hour of every day they cover,
+ * and cover the same days: checked at each start and end of a period (the
+ * prices are constant between them). Charges that disagree anywhere, or a
+ * day priced by one and not by another, are not the same tariff.
+ */
+export function chargesAgree(charges) {
+  if (charges.length < 2) return true;
+  const dates = new Set();
+  for (const c of charges) {
+    for (const p of c?.periods ?? []) {
+      dates.add(p.from);
+      if (p.to !== null) dates.add(p.to);
+    }
+  }
+  for (const date of dates) {
+    for (let h = 0; h < 24; h += 1) {
+      const first = chargeAt(charges[0], { date, h });
+      for (const c of charges.slice(1)) {
+        const v = chargeAt(c, { date, h });
+        if (v === undefined || first === undefined) {
+          if (v !== first) return false;
+        } else if (Math.abs(v - first) > 1e-9) {
+          return false;
+        }
+      }
+    }
+  }
+  return true;
+}

@@ -21,4 +21,6 @@ the notes of the version's GitHub Release.
   once a day, spot prices of today and tomorrow, one request a minute at
   most, pauses on 429/5xx kept across restarts.
 - A Test button: company, date of the tariffs, parts of the price now.
+- Several household codes are used without a charge code only when they agree
+  over every period held; spot days read for the history are kept.
 - Declared for Denmark only in the store (`countries: ["DK"]`, Gladys 5.3.0 or later).

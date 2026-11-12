@@ -20,6 +20,7 @@ import {
 } from '../src/datahub.js';
 import { SpotMissing, currentPrice, priceIntervals } from '../src/pricing.js';
 import { checkSpotCache, parseSpotDays, priceIn, pruneSpot, spotUrl } from '../src/spot.js';
+import { chargesAgree } from '../src/datahub.js';
 import { local, localMidnight, nextDate, parseInstant } from '../src/time.js';
 import { record } from './helpers/app.js';
 
@@ -216,7 +217,10 @@ test('spot cache from /data: checked; prices found by quarter; old days pruned',
   const day = cache.DK2['2026-11-10'];
   assert.equal(priceIn(day, day.from + 15 * 60_000), day.prices[1]);
   assert.equal(priceIn(day, day.from - 1), undefined);
-  pruneSpot(cache, '2027-01-20');
+  // Kept 62 days after its read, whatever its date.
+  pruneSpot(cache, 62 * 86_400_000 - 1);
+  assert.deepEqual(Object.keys(cache.DK2), ['2026-11-10']);
+  pruneSpot(cache, 62 * 86_400_000 + 1);
   assert.deepEqual(cache.DK2, {});
 });
 
@@ -322,4 +326,59 @@ test('records: an open period begun years ago is kept, periods ended before `sin
   }).DT_C_01;
   assert.equal(c.periods.length, 1);
   assert.equal(chargeAt(c, { date: '2026-11-11', h: 12 }), 0.3);
+});
+
+test('spot cache: the oldest read dropped beyond 800 days an area', () => {
+  const day = parseSpotDays(fixture('dayahead-dk2-2026-11-10'), 'DK2', ['2026-11-10'])[
+    '2026-11-10'
+  ];
+  const cache = { DK2: {} };
+  for (let i = 0; i < 805; i += 1) cache.DK2[`d${i}`] = { ...day, at: 1000 + i };
+  pruneSpot(cache, 2000);
+  assert.equal(Object.keys(cache.DK2).length, 800);
+  assert.equal(cache.DK2.d0, undefined);
+  assert.ok(cache.DK2.d804);
+});
+
+test('spot cache from /data: a day of the wrong length is not used', () => {
+  const days = parseSpotDays(fixture('dayahead-dk2-2026-11-10'), 'DK2', ['2026-11-10']);
+  const short = { ...days['2026-11-10'], prices: days['2026-11-10'].prices.slice(0, 95), at: 1 };
+  assert.deepEqual(checkSpotCache({ DK2: { '2026-11-10': short } }), {});
+  const long = { ...days['2026-11-10'], prices: [...days['2026-11-10'].prices, 1], at: 1 };
+  assert.deepEqual(checkSpotCache({ DK2: { '2026-11-10': long } }), {});
+});
+
+test('spot: an answer with more records than the days asked can hold is refused', () => {
+  const answer = fixture('dayahead-dk2-2026-11-10');
+  const padded = structuredClone(answer);
+  // 101 records for one day: the quarters of the day are all there, still refused.
+  for (let i = 0; i < 5; i += 1) {
+    padded.records.push({ ...answer.records[0], TimeUTC: `2026-11-1${i % 2}T23:59:0${i}` });
+  }
+  assert.deepEqual(parseSpotDays(padded, 'DK2', ['2026-11-10']), {});
+});
+
+test('spot: a price beyond 50,000 DKK/MWh leaves the day out', () => {
+  const answer = structuredClone(fixture('dayahead-dk2-2026-11-10'));
+  answer.records[7].DayAheadPriceDKK = 60_000;
+  assert.deepEqual(parseSpotDays(answer, 'DK2', ['2026-11-10']), {});
+  answer.records[7].DayAheadPriceDKK = -60_000;
+  assert.deepEqual(parseSpotDays(answer, 'DK2', ['2026-11-10']), {});
+});
+
+test('codes agree only when equal over every period and the same days (the Cerius case)', () => {
+  const a = {
+    periods: [{ from: '2026-10-01', to: '2026-11-20', prices: new Array(24).fill(0.3) }],
+  };
+  const same = structuredClone(a);
+  assert.equal(chargesAgree([a, same]), true);
+  // 30TR_C_ET published for the next season, 93TR_C_ET not yet: not the same tariff.
+  const ahead = structuredClone(a);
+  ahead.periods.unshift({ from: '2026-11-20', to: null, prices: new Array(24).fill(0.3) });
+  assert.equal(chargesAgree([ahead, a]), false);
+  // A price different at one hour of one day only.
+  const hour = structuredClone(a);
+  hour.periods[0].prices[17] = 0.31;
+  assert.equal(chargesAgree([a, hour]), false);
+  assert.equal(chargesAgree([a]), true);
 });
