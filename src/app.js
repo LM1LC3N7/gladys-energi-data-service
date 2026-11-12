@@ -708,11 +708,14 @@ export class EnergiDataServiceApp {
   drain() {
     if (this.draining || this.stopped) return;
     if (this.spotQueue.size === 0 && this.tariffQueue.size === 0) return;
-    this.draining = this.drainLoop()
+    const loop = this.drainLoop()
       .catch((err) => this.log.error(`Background read failed (${err?.name ?? 'Error'})`))
       .finally(() => {
-        this.draining = null;
+        // Only its own loop: the end of a loop of an earlier start never
+        // frees the slot of the current one (two loops of one start, never).
+        if (this.draining === loop) this.draining = null;
       });
+    this.draining = loop;
   }
 
   async drainLoop() {

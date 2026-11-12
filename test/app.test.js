@@ -974,3 +974,65 @@ test('stop while a request waits its turn: it never leaves nor writes /data', as
   assert.equal(env.net.calls.length, 1);
   assert.equal(env.stores.state.saves, saves);
 });
+
+// --- review r2 ------------------------------------------------------------------------------
+
+test('the time of each request is written to /data before it leaves', async () => {
+  const env = await setup({ net: apiNet() });
+  const times = [];
+  const fetch = env.net.fetch;
+  env.app.fetchImpl = (...args) => {
+    times.push(env.clock.now);
+    assert.equal(env.stores.state.data.lastRequestAt, env.clock.now);
+    return fetch(...args);
+  };
+  await env.run(WARM);
+  assert.equal(times.length, 3);
+  assert.equal(env.stores.state.data.lastRequestAt, times.at(-1));
+});
+
+test('a reconnection: the queues of the new start are served at once, not at the next tick', async () => {
+  const env = await setup({ net: apiNet() });
+  await env.run(SECOND);
+  // Energinet read; Radius waits its turn. Gladys says "connected" again.
+  await env.app.connected();
+  await env.advance(3 * REQUEST_GAP);
+  assert.equal(env.net.count(DAYAHEAD), 1);
+});
+
+test('stop right after an answer arrived: nothing kept, nothing written', async () => {
+  const env = await setup({ net: apiNet() });
+  const request = env.app.request.bind(env.app);
+  env.app.request = async (...args) => {
+    const answer = await request(...args);
+    await env.app.stop();
+    return answer;
+  };
+  await env.run(SECOND);
+  assert.equal(env.net.calls.length, 1);
+  assert.deepEqual(env.app.tariffs, {});
+  assert.equal(env.stores.tariffs.saves, 0);
+});
+
+test('a reconnection never leaves two reading loops of one start', async () => {
+  const env = await setup({ net: apiNet() });
+  const loops = [];
+  const drainLoop = env.app.drainLoop.bind(env.app);
+  env.app.drainLoop = () => {
+    const entry = { gen: env.app.gen, done: false };
+    loops.push(entry);
+    return drainLoop().finally(() => {
+      entry.done = true;
+    });
+  };
+  await env.run(SECOND);
+  await env.app.connected();
+  // The old loop ends with its request (65 s); the new one still waits its turn.
+  await env.advance(REQUEST_GAP + 5 * SECOND);
+  env.app.wantSpot('DK2', ['2026-11-10']);
+  await settle();
+  const live = loops.filter((l) => !l.done && l.gen === env.app.gen);
+  assert.ok(live.length <= 1, `${live.length} loops of the current start`);
+  await env.advance(5 * REQUEST_GAP);
+  assert.equal(env.net.count(DAYAHEAD), 2);
+});

@@ -292,5 +292,29 @@
     "file": "src/app.js",
     "from": "ago >= 0 && ago < REQUEST_GAP",
     "to": "true"
+  },
+  {
+    "name": "request time written to /data",
+    "file": "src/app.js",
+    "from": "      this.state.lastRequestAt = this.now();\n      this.save('state').catch(() => {});\n",
+    "to": ""
+  },
+  {
+    "name": "start frees the reading slot",
+    "file": "src/app.js",
+    "from": "    // holds the queues of this one.\n    this.draining = null;",
+    "to": "    // holds the queues of this one."
+  },
+  {
+    "name": "answer after stop not kept",
+    "file": "src/app.js",
+    "from": "    // Stopped meanwhile: nothing kept, nothing written.\n    if (this.stopped) return false;",
+    "to": "    // Stopped meanwhile: nothing kept, nothing written."
+  },
+  {
+    "name": "only its own loop frees the slot",
+    "file": "src/app.js",
+    "from": "if (this.draining === loop) this.draining = null;",
+    "to": "this.draining = null;"
   }
 ]
