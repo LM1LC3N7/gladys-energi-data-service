@@ -1,177 +1,175 @@
 {
   "manifest_version": 1,
   "type": "device",
-  "name": "Demo Devices Template",
+  "name": "Energi Data Service (Denmark)",
   "description": {
-    "en": "Starter template showing sensors, a switch, a dimmable light and a smart plug.",
-    "fr": "Template de démarrage : capteurs, interrupteur, lampe variable et prise connectée."
+    "en": "Danish electricity prices: grid company tariff, Energinet, elafgift and DK1/DK2 spot.",
+    "fr": "Prix de l’électricité au Danemark : tarif réseau, Energinet, elafgift, spot DK1/DK2."
   },
-  "version": "1.0.0",
-  "docker_image": "ghcr.io/gladysassistant/integration-template-js:1.0.0",
-  "gladys_version": ">=5.1.0",
-  "cover_image": "https://raw.githubusercontent.com/GladysAssistant/integration-template-js/master/cover.png",
-  "categories": ["lighting", "security", "environment"],
-  "transports": ["local", "cloud"],
+  "version": "0.1.0",
+  "docker_image": "ghcr.io/lm1lc3n7/gladys-energi-data-service:0.1.0",
+  "gladys_version": ">=5.3.0",
+  "cover_image": "https://raw.githubusercontent.com/LM1LC3N7/gladys-energi-data-service/main/cover.png",
+  "categories": ["energy"],
+  "transports": ["cloud"],
+  "countries": ["DK"],
   "config_schema": [
     {
       "key": "intro",
       "type": "section",
-      "label": { "en": "Getting started", "fr": "Pour commencer" },
+      "label": {
+        "en": "Danish electricity prices",
+        "fr": "Prix de l’électricité au Danemark"
+      },
       "description": {
-        "en": "The demo weather station reads real data from the free Open-Meteo API: pick the coordinates to observe. No account, no API key.",
-        "fr": "La station météo de démonstration lit de vraies données via l'API gratuite Open-Meteo : choisissez les coordonnées à observer. Pas de compte, pas de clé d'API."
+        "en": "This integration prices your electricity in Denmark: create a contract with the \"Energi Data Service (Denmark)\" template in Energy > Contracts and enter your grid company (netselskab) there. Data: Energi Data Service (Energinet), open data, without an account: the tariffs of the grid companies and of Energinet (DatahubPricelist) and the day-ahead spot prices (DayAheadPrices). The API allows about one request a minute: after the creation of a contract, its prices come in the next minutes.",
+        "fr": "Cette intégration tarifie votre électricité au Danemark : créez un contrat avec le modèle « Energi Data Service (Danemark) » dans Énergie > Contrats et indiquez-y votre gestionnaire de réseau (netselskab). Données : Energi Data Service (Energinet), données ouvertes, sans compte : les tarifs des gestionnaires et d’Energinet (DatahubPricelist) et les prix spot day-ahead (DayAheadPrices). L’API accepte environ une requête par minute : après la création d’un contrat, ses prix arrivent dans les minutes qui suivent."
       },
       "links": [
         {
-          "url": "https://open-meteo.com/en/docs",
-          "label": { "en": "Open-Meteo documentation", "fr": "Documentation Open-Meteo" }
+          "url": "https://www.energidataservice.dk",
+          "label": {
+            "en": "Energi Data Service (Energinet)",
+            "fr": "Energi Data Service (Energinet)"
+          }
+        },
+        {
+          "url": "https://github.com/LM1LC3N7/gladys-energi-data-service/blob/main/docs/en.md",
+          "label": {
+            "en": "Documentation",
+            "fr": "Documentation"
+          }
         }
       ]
-    },
-    {
-      "key": "latitude",
-      "type": "number",
-      "label": { "en": "Latitude", "fr": "Latitude" },
-      "description": {
-        "en": "Latitude used for the demo weather sensor.",
-        "fr": "Latitude utilisée par le capteur météo de démonstration."
-      },
-      "placeholder": { "en": "e.g. 48.8566", "fr": "ex. 48.8566" },
-      "required": true,
-      "default": 48.8566,
-      "min": -90,
-      "max": 90
-    },
-    {
-      "key": "longitude",
-      "type": "number",
-      "label": { "en": "Longitude", "fr": "Longitude" },
-      "description": {
-        "en": "Longitude used for the demo weather sensor.",
-        "fr": "Longitude utilisée par le capteur météo de démonstration."
-      },
-      "placeholder": { "en": "e.g. 2.3522", "fr": "ex. 2.3522" },
-      "required": true,
-      "default": 2.3522,
-      "min": -180,
-      "max": 180
-    },
-    {
-      "key": "unit",
-      "type": "select",
-      "label": { "en": "Temperature unit", "fr": "Unité de température" },
-      "required": false,
-      "default": "celsius",
-      "options": [
-        { "value": "celsius", "label": { "en": "Celsius", "fr": "Celsius" } },
-        { "value": "fahrenheit", "label": { "en": "Fahrenheit", "fr": "Fahrenheit" } }
-      ]
-    },
-    {
-      "key": "poll_frequency",
-      "type": "number",
-      "label": { "en": "Refresh interval (s)", "fr": "Intervalle de rafraîchissement (s)" },
-      "description": {
-        "en": "How often sensors are polled, in seconds (one minute minimum).",
-        "fr": "Fréquence d'interrogation des capteurs, en secondes (une minute minimum)."
-      },
-      "required": false,
-      "default": 300,
-      "min": 60,
-      "max": 3600
     }
   ],
   "actions": [
     {
-      "key": "test_weather",
-      "label": { "en": "Test the weather provider", "fr": "Tester le fournisseur météo" },
-      "timeout_seconds": 30
-    },
-    {
-      "key": "identify",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "fields": [
-        {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
-          "required": true
-        }
-      ]
+      "key": "test",
+      "timeout_seconds": 30,
+      "label": {
+        "en": "Test",
+        "fr": "Tester"
+      },
+      "description": {
+        "en": "Shows, for each contract (3 at most), the grid company found, the date its tariffs were read and the parts of the price now (grid, Energinet, elafgift, spot). Makes no request.",
+        "fr": "Affiche, pour chaque contrat (3 au plus), le gestionnaire trouvé, la date de lecture de ses tarifs et les parts du prix actuel (réseau, Energinet, elafgift, spot). Ne fait aucune requête."
+      }
     }
   ],
-  "scene_triggers": [
-    {
-      "key": "motion_detected",
-      "label": { "en": "Motion detected", "fr": "Mouvement détecté" },
-      "description": {
-        "en": "A demo motion sensor saw a person or an animal move.",
-        "fr": "Un détecteur de démonstration a vu bouger une personne ou un animal."
-      },
-      "fields": [
-        {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Sensor", "fr": "Détecteur" }
+  "energy_contracts": {
+    "templates": [
+      {
+        "key": "energi-data-service-dk",
+        "name": {
+          "en": "Energi Data Service (Denmark): tariffs and spot",
+          "fr": "Energi Data Service (Danemark) : tarifs et spot"
         },
-        {
-          "key": "target",
-          "type": "multi_select",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" },
-          "options": [
-            { "value": "person", "label": { "en": "Person", "fr": "Personne" } },
-            { "value": "animal", "label": { "en": "Animal", "fr": "Animal" } }
+        "description": {
+          "en": "The hourly tariff of your grid company (Nettarif C), Energinet's transmission and system tariffs and the electricity tax (elafgift) from DataHub, optionally the DK1/DK2 spot price and your supplier's markup, VAT 25 % included. Priced by the integration. Subscriptions are not read: enter them below.",
+          "fr": "Le tarif horaire de votre gestionnaire (Nettarif C), les tarifs de transport et de système d’Energinet et la taxe sur l’électricité (elafgift) de DataHub, en option le prix spot DK1/DK2 et la marge de votre fournisseur, TVA 25 % comprise. Tarifé par l’intégration. Les abonnements ne sont pas lus : saisissez-les ci-dessous."
+        },
+        "country": "DK",
+        "currency": "DKK",
+        "timezone": "Europe/Copenhagen",
+        "pricing_mode": "delegated",
+        "version": "2026-11-11",
+        "inputs": [
+          {
+            "key": "grid_company",
+            "type": "string",
+            "required": true,
+            "label": {
+              "en": "Grid company (netselskab)",
+              "fr": "Gestionnaire de réseau (netselskab)"
+            },
+            "description": {
+              "en": "Its name (\"Radius\", \"N1 A/S - 131\") or its GLN (13 digits, on your bill). The list is in the documentation.",
+              "fr": "Son nom (« Radius », « N1 A/S - 131 ») ou son GLN (13 caractères, sur votre facture). La liste est dans la documentation."
+            }
+          },
+          {
+            "key": "charge_code",
+            "type": "string",
+            "required": false,
+            "label": {
+              "en": "Charge code (only if asked)",
+              "fr": "Code du tarif (seulement si demandé)"
+            },
+            "description": {
+              "en": "The DataHub code of your grid tariff. Only when the status asks for it (a company with several household tariffs that differ) or for a GLN that is not in the list.",
+              "fr": "Le code DataHub de votre tarif réseau. Seulement si le statut le demande (gestionnaire avec plusieurs tarifs résidentiels différents) ou pour un GLN absent de la liste."
+            }
+          },
+          {
+            "key": "supply",
+            "type": "select",
+            "options": ["grid_only", "spot"],
+            "default": "grid_only",
+            "label": {
+              "en": "Electricity supply",
+              "fr": "Fourniture d’électricité"
+            },
+            "description": {
+              "en": "grid_only: the tariffs and the elafgift alone. spot: plus the spot price of the area (every 15 minutes) and your supplier's markup.",
+              "fr": "grid_only : les tarifs et l’elafgift seuls. spot : plus le prix spot de la zone (au quart d’heure) et la marge de votre fournisseur."
+            }
+          },
+          {
+            "key": "price_area",
+            "type": "select",
+            "options": ["DK1", "DK2"],
+            "label": {
+              "en": "Price area",
+              "fr": "Zone de prix"
+            },
+            "description": {
+              "en": "DK1: Jutland and Funen (west of the Great Belt). DK2: Zealand, Lolland-Falster and Bornholm (east). Needed with the spot supply: no default, a wrong area would go unnoticed.",
+              "fr": "DK1 : Jutland et Fionie (ouest du Grand Belt). DK2 : Seeland, Lolland-Falster et Bornholm (est). Obligatoire avec la fourniture spot : pas de valeur par défaut, une mauvaise zone passerait inaperçue."
+            }
+          },
+          {
+            "key": "supplier_markup",
+            "type": "number",
+            "unit": "DKK/kWh",
+            "default": 0,
+            "label": {
+              "en": "Supplier markup per kWh, without VAT",
+              "fr": "Marge du fournisseur par kWh, hors TVA"
+            },
+            "description": {
+              "en": "Added to the spot price (tillæg). Between -1 and 5.",
+              "fr": "Ajoutée au prix spot (tillæg). Entre -1 et 5."
+            }
+          },
+          {
+            "key": "monthly_fees",
+            "type": "number",
+            "unit": "DKK/month",
+            "default": 0,
+            "label": {
+              "en": "Monthly subscriptions, VAT included",
+              "fr": "Abonnements mensuels, TVA comprise"
+            },
+            "description": {
+              "en": "Optional: the grid subscription (netabonnement), Energinet's and your supplier's, counted as a fixed monthly amount.",
+              "fr": "Facultatif : l’abonnement réseau (netabonnement), celui d’Energinet et celui du fournisseur, comptés comme un montant fixe mensuel."
+            }
+          }
+        ],
+        "tariff": {
+          "tariff_version": 1,
+          "components": [
+            {
+              "key": "monthly_fees",
+              "kind": "fixed",
+              "label": "Subscriptions",
+              "amount": "{{input:monthly_fees}}",
+              "per": "month"
+            }
           ]
         }
-      ],
-      "variables": [
-        {
-          "key": "target",
-          "type": "string",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" }
-        }
-      ]
-    }
-  ],
-  "scene_actions": [
-    {
-      "key": "identify_device",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "description": {
-        "en": "Make a device signal itself (the demo light blinks).",
-        "fr": "Fait se signaler un appareil (la lampe de démonstration clignote)."
-      },
-      "timeout_seconds": 15,
-      "fields": [
-        {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
-          "required": true
-        }
-      ],
-      "outputs": [
-        {
-          "key": "signalled",
-          "type": "boolean",
-          "label": { "en": "Device signalled", "fr": "Appareil signalé" }
-        }
-      ]
-    }
-  ],
-  "widgets": [
-    {
-      "key": "demo_status",
-      "label": { "en": "Demo status", "fr": "État de la démo" },
-      "description": {
-        "en": "Live temperature and plug power, plug connection and observed location.",
-        "fr": "Température et puissance en direct, connexion de la prise, position observée."
-      },
-      "icon": "activity",
-      "action_timeout_seconds": 15
-    }
-  ]
+      }
+    ]
+  }
 }

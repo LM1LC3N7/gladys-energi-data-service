@@ -23,6 +23,8 @@ RUN npm ci --omit=dev || npm install --omit=dev
 COPY index.js ./
 COPY src ./src
 COPY gladys-assistant-integration.json ./
+# The license and the notices ship with the code (attribution of the Energinet data).
+COPY LICENSE THIRD_PARTY_NOTICES.md ./
 
 # The only writable location allowed at runtime. Docker creates a new volume
 # with the owner of the image's /data, so it must belong to `node`, and before

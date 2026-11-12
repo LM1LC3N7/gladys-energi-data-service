@@ -1,0 +1,224 @@
+[
+  {
+    "name": "VAT on the total",
+    "file": "src/pricing.js",
+    "from": "total: net * (1 + VAT)",
+    "to": "total: net"
+  },
+  {
+    "name": "negative total counted zero",
+    "file": "src/pricing.js",
+    "from": "cost: Math.max(0, round6(kwh * total)),",
+    "to": "cost: round6(kwh * total),"
+  },
+  {
+    "name": "interval on a half hour",
+    "file": "src/pricing.js",
+    "from": "if (start % INTERVAL !== 0) throw",
+    "to": "if (false) throw"
+  },
+  {
+    "name": "spot mean over the two quarters",
+    "file": "src/pricing.js",
+    "from": "spot = spotOf(context.spot, settings.area, start, length);",
+    "to": "spot = spotAt(context.spot, settings.area, start);"
+  },
+  {
+    "name": "missing spot throws",
+    "file": "src/pricing.js",
+    "from": "if (typeof price !== 'number' || !Number.isFinite(price)) throw new SpotMissing(area, ms);",
+    "to": "if (typeof price !== 'number') return 0;"
+  },
+  {
+    "name": "markup only with spot",
+    "file": "src/pricing.js",
+    "from": "    markup = settings.markup;\n",
+    "to": ""
+  },
+  {
+    "name": "Energinet charge missing throws",
+    "file": "src/app.js",
+    "from": "if (v === undefined) throw new PriceMissing(`no Energinet ${name} for ${t.date}`);",
+    "to": "if (v === undefined) continue;"
+  },
+  {
+    "name": "codes that differ refused",
+    "file": "src/app.js",
+    "from": "if (values.some(({ v }) => Math.abs(v - values[0].v) > 1e-9)) {",
+    "to": "if (false) {"
+  },
+  {
+    "name": "no tariff for the date throws",
+    "file": "src/app.js",
+    "from": "if (values.length === 0) {\n      throw new PriceMissing",
+    "to": "if (values.length === -1) {\n      throw new PriceMissing"
+  },
+  {
+    "name": "unknown GLN needs a code",
+    "file": "src/app.js",
+    "from": "if (!company.known && !settings.code) {",
+    "to": "if (false) {"
+  },
+  {
+    "name": "request gap kept",
+    "file": "src/app.js",
+    "from": "if (gap > 0) await this.sleep(gap);",
+    "to": "if (false) await this.sleep(gap);"
+  },
+  {
+    "name": "nothing after stop",
+    "file": "src/app.js",
+    "from": "if (this.stopped) throw new HttpError('stopped', 'integration stopped');",
+    "to": "if (false) throw new HttpError('stopped', 'integration stopped');"
+  },
+  {
+    "name": "pause checked before a request",
+    "file": "src/app.js",
+    "from": "      if (paused) {\n        throw new HttpError('paused',",
+    "to": "      if (false) {\n        throw new HttpError('paused',"
+  },
+  {
+    "name": "pause doubles",
+    "file": "src/app.js",
+    "from": "const delay = previous ? Math.min(PAUSE_MAX, previous.delay * 2) : PAUSE_MIN;",
+    "to": "const delay = PAUSE_MIN;"
+  },
+  {
+    "name": "pause at least the API's wait",
+    "file": "src/app.js",
+    "from": "Math.max(err.retryAfter ?? 0, delay)",
+    "to": "delay"
+  },
+  {
+    "name": "pause from /data bounded",
+    "file": "src/app.js",
+    "from": "until <= this.now() + PAUSE_MAX",
+    "to": "true"
+  },
+  {
+    "name": "refresh not faster than a day",
+    "file": "src/app.js",
+    "from": "if (this.holds(key) && this.now() - held.at < REFRESH_INTERVAL - TARIFF_RETRY) continue;",
+    "to": "if (false) continue;"
+  },
+  {
+    "name": "refresh skips keys queued",
+    "file": "src/app.js",
+    "from": "if (this.tariffQueue.has(key) || this.inFlight.has(key)) continue;",
+    "to": "if (false) continue;"
+  },
+  {
+    "name": "no refresh without /data",
+    "file": "src/app.js",
+    "from": "if (!(await this.save('state'))) {",
+    "to": "if (!(await this.save('state')) && false) {"
+  },
+  {
+    "name": "Energinet incomplete answer refused",
+    "file": "src/app.js",
+    "from": "if (key === ENERGINET && Object.values(parsed).some((c) => c.periods.length === 0)) {",
+    "to": "if (false) {"
+  },
+  {
+    "name": "empty answer keeps held tariffs",
+    "file": "src/app.js",
+    "from": "if (empty && held && Object.values(held.codes).some((c) => c.periods.length > 0)) {",
+    "to": "if (false) {"
+  },
+  {
+    "name": "spot day never asked before the dataset",
+    "file": "src/app.js",
+    "from": "if (date < SPOT_FIRST_DAY || date > tomorrow) continue;",
+    "to": "if (date > tomorrow) continue;"
+  },
+  {
+    "name": "spot retry wait",
+    "file": "src/app.js",
+    "from": "      if (this.waiting(key)) continue;\n      if (this.spotQueue.size",
+    "to": "      if (this.spotQueue.size"
+  },
+  {
+    "name": "tariff read in the background, not in pricing",
+    "file": "src/app.js",
+    "from": "      this.wantTariff(company.gln);\n      throw new PriceMissing(`tariffs of",
+    "to": "      throw new PriceMissing(`tariffs of"
+  },
+  {
+    "name": "record with holes refused",
+    "file": "src/datahub.js",
+    "from": "    // Some hours without a price: unknown, never guessed.\n    return null;",
+    "to": "    prices = new Array(24).fill(r.Price1);"
+  },
+  {
+    "name": "full page refused",
+    "file": "src/datahub.js",
+    "from": "if (records.length >= MAX_RECORDS) return null;",
+    "to": ""
+  },
+  {
+    "name": "other owner refused",
+    "file": "src/datahub.js",
+    "from": "if (r?.GLN_Number !== gln) return null;",
+    "to": "if (false) return null;"
+  },
+  {
+    "name": "later period wins",
+    "file": "src/datahub.js",
+    "from": "if (a.from !== b.from) return a.from < b.from ? 1 : -1;",
+    "to": "if (a.from !== b.from) return a.from < b.from ? -1 : 1;"
+  },
+  {
+    "name": "ValidTo excluded",
+    "file": "src/datahub.js",
+    "from": "(p.to === null || date < p.to)",
+    "to": "(p.to === null || date <= p.to)"
+  },
+  {
+    "name": "old periods dropped, open kept",
+    "file": "src/datahub.js",
+    "from": "if (rest.to === null || rest.to > since)",
+    "to": "if (rest.to > since)"
+  },
+  {
+    "name": "spot day whole",
+    "file": "src/spot.js",
+    "from": "if (whole && prices.length === day.size)",
+    "to": "if (prices.length > 0)"
+  },
+  {
+    "name": "spot area checked",
+    "file": "src/spot.js",
+    "from": "if (r.PriceArea !== area || typeof mwh",
+    "to": "if (typeof mwh"
+  },
+  {
+    "name": "spot DKK/MWh to DKK/kWh",
+    "file": "src/spot.js",
+    "from": "Math.round(mwh * 100) / 100_000",
+    "to": "Math.round(mwh * 100) / 100"
+  },
+  {
+    "name": "no default area for spot",
+    "file": "src/contract.js",
+    "from": "if (area === null && supply === 'spot') {",
+    "to": "if (false) {"
+  },
+  {
+    "name": "markup bounded",
+    "file": "src/contract.js",
+    "from": "markup < MIN_MARKUP || markup > MAX_MARKUP",
+    "to": "false"
+  },
+  {
+    "name": "429 wait read from the body",
+    "file": "src/http.js",
+    "from": "retryAfter = waitInMessage(await readSome(response, 2048));",
+    "to": "await readSome(response, 2048);"
+  },
+  {
+    "name": "pause that began during the wait",
+    "file": "src/app.js",
+    "from": "if (this.pauseOf()) throw new HttpError('paused', 'Energi Data Service paused');",
+    "to": "if (false) throw new HttpError('paused', 'Energi Data Service paused');"
+  }
+]

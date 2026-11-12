@@ -1,76 +1,58 @@
 # CLAUDE.md
 
-Project rules for coding assistants (Claude Code reads this file) and for human
-contributors.
+Project rules for coding assistants (Claude Code reads this file) and for
+human contributors.
 
 ## What this is
 
-A Gladys Assistant **external integration**: a Node.js service (Node 22+, ESM,
-no build step) that runs in its own sandboxed Docker container and talks to
-Gladys through
-[`@gladysassistant/integration-sdk`](https://github.com/GladysAssistant/integration-sdk-js),
-its only runtime dependency. It started from the official JavaScript template.
+A Gladys Assistant **external integration** of type `device` (Node.js 22+,
+ESM, no build step, sandboxed Docker container, `@gladysassistant/integration-sdk`
+0.16). It offers one delegated **energy contract** template,
+"energi-data-service-dk": the Danish household price from Energi Data Service
+(Energinet open data): grid company tariff, Energinet tariffs, elafgift,
+optional DK1/DK2 spot and markup, VAT. A device per contract shows the price
+now. Unofficial. Read-only: nothing is ever commanded.
 
 ## Commands
 
 ```bash
 npm install
-npm test                                  # node --test, the built-in runner
-node --test test/devices.test.js          # one file
-node --test --test-name-pattern "plug"    # tests whose name matches
-npm run lint                              # ESLint
-npm run format:check                      # Prettier, as the CI runs it
-npm run format                            # Prettier, fix in place
-npx github:GladysAssistant/integration-store .   # store admission checks
+npm test                                  # node --test (or gi test)
+npm run lint && npm run format:check
+node scripts/snapshot.mjs                 # directory of grid companies (1 API call)
+memcap node scripts/mutants.mjs           # mutation check, one mutant at a time
 ```
-
-The CI (`.github/workflows/ci.yml`) runs `format:check`, `lint` and `test` on
-Node 22 and 24, and builds the Docker image: run the three commands before
-pushing.
 
 ## Architecture
 
 ```
-index.js                          SDK wiring only: handlers registered before connect()
-src/devices/index.js              registry of the device blueprints + dispatch helpers
-src/devices/<type>.js             one device type per file (buildDevice, onPoll, onSetValue...)
-src/scenes.js                     scene action handlers (manifest `scene_actions`)
-src/widgets.js                    dashboard widget handlers (manifest `widgets`)
-src/config.js                     DEFAULT_CONFIG (mirrors the manifest defaults) + normalization
-src/weather.js                    example driver (Open-Meteo)
-gladys-assistant-integration.json manifest: name, config_schema, actions, image...
-docs/en.md, docs/fr.md            user documentation, re-hosted by Gladys (mandatory)
-test/                             node --test, against the SDK's fake Gladys (integration-sdk/testing)
-.github/scripts/release.mjs       release helpers (manifest bump, changelog), tested in test/
+index.js          SDK wiring only (src/handlers.js)
+src/app.js        EnergiDataServiceApp: lifecycle, contracts, pricing, background
+                  reads (tariffs, spot), daily refresh, pauses, status, Test
+src/datahub.js    DatahubPricelist: URL, records, periods, price at a local hour (pure)
+src/spot.js       DayAheadPrices: URL, whole days of quarters, cache (pure)
+src/pricing.js    cost of the 30-minute intervals, current price (pure)
+src/catalog.js    directory of grid companies; company from an input (pure)
+src/contract.js   template key and inputs (pure)
+src/time.js       Europe/Copenhagen local time (pure)
+src/http.js       the only network access (User-Agent, bounds, deadline, 429 wait)
+src/store.js      /data files (state, tariffs, spot)
 ```
 
 ## Rules
 
-- **External ids are forever.** Build them with
-  `gladys.externalIds(type, platformId)`, `platformId` being the unique id the
-  platform gives the device (serial, cloud id, MAC), never a label. Gladys keys
-  devices, their history, scenes and dashboards on them: changing one creates a
-  new device and orphans the old one. The same goes for every key users store:
-  manifest `config_schema`, `actions`, widget and scene keys, feature keys.
-- **The container rootfs is read-only.** Write only under `/data`, the one
-  writable volume. Never log tokens, passwords or API keys.
-- **Versions belong to the Release workflow** (Actions → Release). Never edit
-  `version` in `package.json` or in the manifest, nor the `docker_image` tag,
-  by hand — except on the README's hand-pushed tag path, which bumps all three
-  together before tagging. `test/manifest.test.js` checks they agree.
-- **Changelog.** Every user-visible change adds a line under `## [Unreleased]`
-  in `CHANGELOG.md` (`### Added`, `Changed`, `Fixed`, `Removed`, `Security`).
-  Never write a version heading: the Release workflow moves the section, and it
-  becomes the notes of the GitHub Release.
-- **Manifest.** Texts are multi-language objects `{ "en": ..., "fr": ... }`:
-  `label`, `description` and `placeholder` alike, never a plain string. The
-  catalog `description` holds 10 to 100 characters per language. A field the
-  older cores do not know needs a higher `gladys_version` minimum
-  (`categories`: 4.86.0; `widgets`, `scene_triggers`, `scene_actions`,
-  `type: "provider"`: 5.1.0). `test/manifest.test.js` ties the manifest to the
-  code (defaults, action, scene and widget handlers): change both sides
-  together.
-- **User-facing text** is bilingual (English and French): action messages,
-  manifest texts, and `docs/en.md` / `docs/fr.md`, kept in sync.
-- **Style.** Prettier formats, ESLint catches mistakes. Comments explain why,
-  in English. Tests never touch the network.
+- **About one request a minute** (the API's limit): one lane, REQUEST_GAP
+  apart; 429/5xx pause kept in /data. Never more requests to warm up faster.
+- **The pricing never waits for the network**: it answers from what is held;
+  a missing tariff or spot day is queued and read in the background.
+- **Never guess a price.** An unknown tariff, Energinet charge or spot
+  quarter throws: the core gives the interval no cost and asks again. Two
+  codes that disagree: the contract must choose.
+- **`start` filters on ValidFrom** in this API: never use it for tariffs.
+- **Keys are forever**: template key, input keys and option values, feature
+  key.
+- **Attribution**: "Conditions for use of Danish public-sector data", Energi
+  Data Service (docs, notices). Never suggest Energinet endorses it.
+- Never read the GPL Home Assistant integration "energidataservice".
+- Bilingual texts (en/fr), CHANGELOG `[Unreleased]`, versions by the Release
+  workflow only.

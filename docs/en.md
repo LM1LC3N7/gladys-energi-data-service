@@ -1,61 +1,144 @@
-# Demo Devices Template
+# Energi Data Service (Denmark)
 
-This is the user documentation of the integration. Gladys re-hosts this file
-and shows a permanent **Documentation** link to it in the Configuration screen
-(in the user's language, with English as the fallback) — it is when
-configuring that the user needs it most. Keep the short onboarding hints in
-the `section` blocks of the manifest `config_schema`; put the long
-step-by-step (screenshots, troubleshooting…) here.
+Unofficial integration. It prices your electricity in Denmark as a Gladys
+**energy contract**: the hourly grid tariff of your grid company
+(netselskab), Energinet's transmission and system tariffs, the electricity
+tax (elafgift) and, if you want, the DK1/DK2 spot price with your supplier's
+markup, VAT 25 % included. Everything comes from **Energi Data Service**, the
+open data portal of Energinet, without an account or a key.
 
-## What you get
+It has never been tested with a real Gladys contract nor a real Danish meter:
+the prices are checked against real answers of the API by the tests. Please
+report any difference with your bill.
 
-Six demo devices show up after installation: a weather station (real data
-from Open-Meteo), a switch, a dimmable light, a smart plug with power
-metering, a motion sensor and a camera.
+## Set up
 
-## Configuration
+1. Install the integration (Gladys 5.3.0 or later). Nothing to fill in its
+   configuration screen.
+2. In **Energy > Contracts**, create a contract with the template
+   **"Energi Data Service (Denmark): tariffs and spot"** and attach your meter:
+   - **Grid company**: its name ("Radius", "N1 A/S - 131") or its GLN (13
+     digits, on your bill). The list is below.
+   - **Charge code**: leave empty, unless the status asks for it (see below).
+   - **Electricity supply**: `grid_only` (tariffs and elafgift only) or `spot`
+     (plus the spot price every 15 minutes and your supplier's markup).
+   - **Price area** (needed for `spot`, no default): `DK1` west of the Great
+     Belt (Jutland, Funen), `DK2` east (Zealand, Lolland-Falster, Bornholm).
+   - **Supplier markup** (DKK/kWh without VAT, between -1 and 5): the
+     "tillæg" of your supplier, added to the spot price.
+   - **Monthly subscriptions** (DKK/month, VAT included): the grid
+     subscription, Energinet's and your supplier's, counted by Gladys as a
+     fixed monthly amount. They are not read from DataHub.
+3. A device "Elpris <company>" appears in **Discovery**: it shows the price
+   of a kWh now (DKK/kWh, VAT included).
 
-1. Open the **Configuration** tab of the integration.
-2. Set the **latitude** and **longitude** the demo weather station should
-   observe (they default to Paris), and pick your temperature unit.
-   The **refresh interval** sets how often the weather station and the
-   plug's power are read: every 5 minutes by default, every minute at most.
-3. Save: the devices appear in the **Discovery** tab, ready to be added.
+The API allows about **one request a minute**: the integration asks one thing
+at a time, at least 65 seconds apart. After the creation of a contract, its
+prices come within a few minutes (Energinet's tariffs, then your company's,
+then the spot prices). Until then Gladys gets no cost for the intervals and
+asks again at its next run (never a zero).
 
-The **Prefer the local connection** toggle drives the demo plug: it reports
-the channel it actually uses as a badge (local or cloud), with an orange dot
-when it runs degraded (local refused, cloud fallback).
+## How the price is computed
 
-## Actions
+For each half hour, in DKK, VAT included:
 
-- **Test the weather provider** — performs a live request to Open-Meteo and
-  shows the current temperature and humidity under the button.
-- **Identify a device** — pick one of your devices in the list and it will
-  signal itself (the demo light "blinks" in the logs).
+    kWh × (grid tariff of the local hour + transmission tariff + system tariff
+           + elafgift + [spot price + markup]) × 1.25
 
-## Scenes
+- **Grid tariff**: the household tariff ("Nettarif C") of your company, by
+  local hour (Price1 = 00:00-01:00 Danish time). On the night of the autumn
+  change the hour 02:00 happens twice: both take the same price, as Energinet
+  says; in spring it does not happen.
+- **Energinet**: transmission tariff (code 40000), system tariff (41000) and
+  elafgift (EA-001), by day.
+- **Spot**: DayAheadPrices of the area, 15-minute prices (since 1 October
+  2025), the mean of the two quarters of the half hour (Gladys sends
+  half-hourly readings: the consumption is taken as even inside them).
+- A company with several household tariff codes ("NT-01", "NT-10"...): when
+  they give the same price, it is used; when they differ, the status asks for
+  the **Charge code** and names the choices.
 
-The integration adds its own cards to the scene editor (Gladys 5.1 or
-later), under the **Integrations** category:
+What Gladys cannot express, said plainly:
 
-- **Motion detected** (trigger) — starts the scene when a demo motion sensor
-  sees something move. Optionally pick the sensor and what moved (person,
-  animal); left empty, any detection matches. The following actions can
-  read what moved with `{{triggerEvent.data.target}}`.
-- **Identify a device** (action) — makes the chosen device signal itself.
-  It returns whether the device could signal itself, so the following
-  actions can depend on it.
+- A **negative total** (very negative spot price) costs **zero**: Gladys takes
+  no credit for an interval. The "price now" of the device may be negative.
+- No reduced elafgift (elvarme) or business VAT rules: the household prices.
+- No spot price before 1 October 2025 (start of the 15-minute dataset).
+- Subscriptions are your own monthly input.
 
-## Dashboard
+A price that is not known (tariffs not read yet, no tariff for that date, a
+missing quarter of spot price) is never guessed nor counted as zero: the
+interval gets no cost and Gladys asks again.
 
-Add the **Demo status** widget to a dashboard: it shows the live
-temperature of the weather station and the power of the office plug, the
-connection the plug currently uses (orange when degraded) and the observed
-location. Its **Identify the light** button makes the demo light signal
-itself.
+## Data and requests
+
+- Tariffs: dataset **DatahubPricelist**, read for the companies your
+  contracts use and for Energinet, then again **once a day** (a read that
+  fails is tried again after an hour; the tariffs held stay in use, and the
+  status says when they were not read again for 3 days). Kept in /data.
+- Spot prices: dataset **DayAheadPrices**, today's and, from 13:00, tomorrow's,
+  plus any day Gladys asks for (31 days in one request at most). A day is
+  kept only whole; kept 62 days in /data.
+- A 429 (too many requests) or a 5xx pauses every request for what the API
+  asks, at least 2 minutes, doubled for each one in a row up to 6 hours; the
+  pause is kept across a restart and shown by the status.
+- Every request carries the integration's own User-Agent. No account, no key,
+  no personal data is sent.
+- The **Test** button shows, for 3 contracts at most, the company found, the
+  date its tariffs were read and the parts of the price now. It makes no
+  request.
+
+Contains data used pursuant to "Conditions for use of Danish public-sector
+data" from the Energi Data Service portal (www.energidataservice.dk),
+Energinet. Energinet does not endorse this integration.
+
+## Grid companies
+
+The directory shipped with this version (read on 2026-11-12): companies with a
+household tariff "Nettarif C" in DataHub. A GLN not in the list is accepted
+with its charge code (DataHub, column ChargeTypeCode).
+
+| Company                      | GLN           | Household tariff codes               |
+| ---------------------------- | ------------- | ------------------------------------ |
+| Cerius A/S                   | 5790000705184 | 30TR_C_ET, 93TR_C_ET                 |
+| Dinel A/S                    | 5790000610099 | TCL<100_02, TCL>100_02               |
+| Elektrus A/S                 | 5790000836239 | 6000091                              |
+| Elinord A/S                  | 5790001095277 | 43300                                |
+| Elnet Midt A/S               | 5790001100520 | 30002, T3001, T3002                  |
+| FLOW Elnet A/S               | 5790000392551 | FE1 NT-01, FE2 NT-01                 |
+| Forsyning Elnet A/S          | 5790001088309 | STR-NT-03                            |
+| Grindsted Elnet A/S          | 5790000681105 | GEV-NT-01                            |
+| Hammel Elforsyning Net A/S   | 5790001090166 | C-Tarif                              |
+| Ikast El Net A/S             | 5790000682102 | IEV-NT-01, IEV-NT-05                 |
+| Konstant Net A/S - 151       | 5790000704842 | 151-NT01T, C_FBTNTR_B                |
+| Konstant Net A/S - 245       | 5790000683345 | 245-NT01T, C_FBTNTR_B                |
+| L-Net A/S                    | 5790001090111 | 3000, 4010                           |
+| Læsø Elnet A/S               | 5790001103460 | 43100                                |
+| Midtfyns Elforsyning A.m.b.A | 5790001089023 | NT15000, NT15001, TNT15000, TNT15001 |
+| N1 A/S - 016                 | 5790002502699 | C-Tarif, K_21100, K_22100            |
+| N1 A/S - 131                 | 5790001089030 | CD                                   |
+| N1 A/S - 344                 | 5790000611003 | T-C-F-F-TD, T-C-F-T-TD               |
+| Netselskabet Elværk A/S      | 5790000681358 | 5NCFF, 5NCFP                         |
+| NOE Net A/S                  | 5790000395620 | 30030, Net C                         |
+| Nord Energi Net A/S          | 5790000610877 | TAC                                  |
+| Radius Elnet A/S             | 5790000705689 | DT_C_01                              |
+| RAH Net A/S                  | 5790000681327 | RAH-C                                |
+| Ravdex A/S                   | 5790000836727 | NT-C                                 |
+| Sunds Net A.m.b.a            | 5790001095444 | SEF-NT-05                            |
+| Tarm Elværk Net A/S          | 5790000706419 | TEV-NT-01, TEV-NT-01T                |
+| TREFOR El-net A/S            | 5790000392261 | C                                    |
+| TREFOR El-net Øst A/S        | 5790000706686 | 46                                   |
+| Veksel A/S                   | 5790001088217 | NT-01, NT-10                         |
+| Vores Elnet A/S              | 5790000610976 | TNT1009, TNT1011                     |
+| Zeanet A/S                   | 5790001089375 | 43100, 43110                         |
+| Aal El-Net A M B A           | 5790001095451 | AAL-NT-05                            |
 
 ## Troubleshooting
 
-The integration logs everything it does: check the integration logs from the
-Gladys UI (or `docker logs` on the host) with `LOG_LEVEL=debug` for the full
-detail.
+- "tariffs of ... not read yet": wait a few minutes (one request a minute).
+- "no tariff of ... for <date>": DataHub has no tariff of that code for that
+  day; check the company and the charge code.
+- "has several household tariffs that differ": fill **Charge code** with the
+  one on your bill.
+- "Energi Data Service asks to wait": the API limit was reached; nothing is
+  asked until the time shown.

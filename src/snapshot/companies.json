@@ -1,0 +1,414 @@
+{
+  "source": {
+    "dataset": "DatahubPricelist",
+    "url": "https://www.energidataservice.dk/tso-electricity/DatahubPricelist",
+    "read": "2026-11-12",
+    "validSince": "2025-01-01"
+  },
+  "companies": [
+    {
+      "gln": "5790000705184",
+      "name": "Cerius A/S",
+      "codes": [
+        {
+          "code": "30TR_C_ET",
+          "note": "Nettarif C"
+        },
+        {
+          "code": "93TR_C_ET",
+          "note": "Nettarif C"
+        }
+      ]
+    },
+    {
+      "gln": "5790000610099",
+      "name": "Dinel A/S",
+      "codes": [
+        {
+          "code": "TCL<100_02",
+          "note": "Nettarif C time"
+        },
+        {
+          "code": "TCL>100_02",
+          "note": "Nettarif C"
+        }
+      ]
+    },
+    {
+      "gln": "5790000836239",
+      "name": "Elektrus A/S",
+      "codes": [
+        {
+          "code": "6000091",
+          "note": "Nettarif C"
+        }
+      ]
+    },
+    {
+      "gln": "5790001095277",
+      "name": "Elinord A/S",
+      "codes": [
+        {
+          "code": "43300",
+          "note": "Nettarif C"
+        }
+      ]
+    },
+    {
+      "gln": "5790001100520",
+      "name": "Elnet Midt A/S",
+      "codes": [
+        {
+          "code": "30002",
+          "note": "Nettarif C time"
+        },
+        {
+          "code": "T3001",
+          "note": "Nettarif C"
+        },
+        {
+          "code": "T3002",
+          "note": "Nettarif C"
+        }
+      ]
+    },
+    {
+      "gln": "5790000392551",
+      "name": "FLOW Elnet A/S",
+      "codes": [
+        {
+          "code": "FE1 NT-01",
+          "note": "Nettarif C"
+        },
+        {
+          "code": "FE2 NT-01",
+          "note": "Nettarif C time"
+        }
+      ]
+    },
+    {
+      "gln": "5790001088309",
+      "name": "Forsyning Elnet A/S",
+      "codes": [
+        {
+          "code": "STR-NT-03",
+          "note": "Nettarif C"
+        }
+      ]
+    },
+    {
+      "gln": "5790000681105",
+      "name": "Grindsted Elnet A/S",
+      "codes": [
+        {
+          "code": "GEV-NT-01",
+          "note": "Nettarif C"
+        }
+      ]
+    },
+    {
+      "gln": "5790001090166",
+      "name": "Hammel Elforsyning Net A/S",
+      "codes": [
+        {
+          "code": "C-Tarif",
+          "note": "Nettarif C"
+        }
+      ]
+    },
+    {
+      "gln": "5790000682102",
+      "name": "Ikast El Net A/S",
+      "codes": [
+        {
+          "code": "IEV-NT-01",
+          "note": "Nettarif C"
+        },
+        {
+          "code": "IEV-NT-05",
+          "note": "Nettarif C"
+        }
+      ]
+    },
+    {
+      "gln": "5790000704842",
+      "name": "Konstant Net A/S - 151",
+      "codes": [
+        {
+          "code": "151-NT01T",
+          "note": "Nettarif C"
+        },
+        {
+          "code": "C_FBTNTR_B",
+          "note": "Nettarif C"
+        }
+      ]
+    },
+    {
+      "gln": "5790000683345",
+      "name": "Konstant Net A/S - 245",
+      "codes": [
+        {
+          "code": "245-NT01T",
+          "note": "Nettarif C"
+        },
+        {
+          "code": "C_FBTNTR_B",
+          "note": "Nettarif C"
+        }
+      ]
+    },
+    {
+      "gln": "5790001090111",
+      "name": "L-Net A/S",
+      "codes": [
+        {
+          "code": "3000",
+          "note": "Nettarif C"
+        },
+        {
+          "code": "4010",
+          "note": "Nettarif C time"
+        }
+      ]
+    },
+    {
+      "gln": "5790001103460",
+      "name": "Læsø Elnet A/S",
+      "codes": [
+        {
+          "code": "43100",
+          "note": "Nettarif C"
+        }
+      ]
+    },
+    {
+      "gln": "5790001089023",
+      "name": "Midtfyns Elforsyning A.m.b.A",
+      "codes": [
+        {
+          "code": "NT15000",
+          "note": "Nettarif C"
+        },
+        {
+          "code": "NT15001",
+          "note": "Nettarif C"
+        },
+        {
+          "code": "TNT15000",
+          "note": "Nettarif C"
+        },
+        {
+          "code": "TNT15001",
+          "note": "Nettarif C"
+        }
+      ]
+    },
+    {
+      "gln": "5790002502699",
+      "name": "N1 A/S - 016",
+      "codes": [
+        {
+          "code": "C-Tarif",
+          "note": "Nettarif C"
+        },
+        {
+          "code": "K_21100",
+          "note": "Nettarif C time"
+        },
+        {
+          "code": "K_22100",
+          "note": "Nettarif C"
+        }
+      ]
+    },
+    {
+      "gln": "5790001089030",
+      "name": "N1 A/S - 131",
+      "codes": [
+        {
+          "code": "CD",
+          "note": "Nettarif C"
+        }
+      ]
+    },
+    {
+      "gln": "5790000611003",
+      "name": "N1 A/S - 344",
+      "codes": [
+        {
+          "code": "T-C-F-F-TD",
+          "note": "Nettarif C"
+        },
+        {
+          "code": "T-C-F-T-TD",
+          "note": "Nettarif C"
+        }
+      ]
+    },
+    {
+      "gln": "5790000681358",
+      "name": "Netselskabet Elværk A/S",
+      "codes": [
+        {
+          "code": "5NCFF",
+          "note": "Nettarif C"
+        },
+        {
+          "code": "5NCFP",
+          "note": "Nettarif C"
+        }
+      ]
+    },
+    {
+      "gln": "5790000395620",
+      "name": "NOE Net A/S",
+      "codes": [
+        {
+          "code": "30030",
+          "note": "Nettarif C"
+        },
+        {
+          "code": "Net C",
+          "note": "Nettarif C"
+        }
+      ]
+    },
+    {
+      "gln": "5790000610877",
+      "name": "Nord Energi Net A/S",
+      "codes": [
+        {
+          "code": "TAC",
+          "note": "Nettarif C"
+        }
+      ]
+    },
+    {
+      "gln": "5790000705689",
+      "name": "Radius Elnet A/S",
+      "codes": [
+        {
+          "code": "DT_C_01",
+          "note": "Nettarif C"
+        }
+      ]
+    },
+    {
+      "gln": "5790000681327",
+      "name": "RAH Net A/S",
+      "codes": [
+        {
+          "code": "RAH-C",
+          "note": "Nettarif C"
+        }
+      ]
+    },
+    {
+      "gln": "5790000836727",
+      "name": "Ravdex A/S",
+      "codes": [
+        {
+          "code": "NT-C",
+          "note": "Nettarif C"
+        }
+      ]
+    },
+    {
+      "gln": "5790001095444",
+      "name": "Sunds Net A.m.b.a",
+      "codes": [
+        {
+          "code": "SEF-NT-05",
+          "note": "Nettarif C"
+        }
+      ]
+    },
+    {
+      "gln": "5790000706419",
+      "name": "Tarm Elværk Net A/S",
+      "codes": [
+        {
+          "code": "TEV-NT-01",
+          "note": "Nettarif C"
+        },
+        {
+          "code": "TEV-NT-01T",
+          "note": "Nettarif C"
+        }
+      ]
+    },
+    {
+      "gln": "5790000392261",
+      "name": "TREFOR El-net A/S",
+      "codes": [
+        {
+          "code": "C",
+          "note": "Nettarif C"
+        }
+      ]
+    },
+    {
+      "gln": "5790000706686",
+      "name": "TREFOR El-net Øst A/S",
+      "codes": [
+        {
+          "code": "46",
+          "note": "Nettarif C"
+        }
+      ]
+    },
+    {
+      "gln": "5790001088217",
+      "name": "Veksel A/S",
+      "codes": [
+        {
+          "code": "NT-01",
+          "note": "Nettarif C"
+        },
+        {
+          "code": "NT-10",
+          "note": "Nettarif C"
+        }
+      ]
+    },
+    {
+      "gln": "5790000610976",
+      "name": "Vores Elnet A/S",
+      "codes": [
+        {
+          "code": "TNT1009",
+          "note": "Nettarif C"
+        },
+        {
+          "code": "TNT1011",
+          "note": "Nettarif C"
+        }
+      ]
+    },
+    {
+      "gln": "5790001089375",
+      "name": "Zeanet A/S",
+      "codes": [
+        {
+          "code": "43100",
+          "note": "Nettarif C"
+        },
+        {
+          "code": "43110",
+          "note": "Nettarif C"
+        }
+      ]
+    },
+    {
+      "gln": "5790001095451",
+      "name": "Aal El-Net A M B A",
+      "codes": [
+        {
+          "code": "AAL-NT-05",
+          "note": "Nettarif C time"
+        }
+      ]
+    }
+  ]
+}
