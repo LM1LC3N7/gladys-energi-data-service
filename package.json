@@ -1,6 +1,6 @@
 {
   "name": "gladys-energi-data-service",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Danish electricity prices for Gladys Assistant from Energi Data Service (Energinet open data): the hourly tariff of every grid company, Energinet's tariffs, the elafgift and the DK1/DK2 spot price, VAT included, as a delegated energy contract.",
   "type": "module",

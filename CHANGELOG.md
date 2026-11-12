@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-11-12
+
 ### Added
 
 - The "Energi Data Service (Denmark)" contract template (delegated pricing):
@@ -24,3 +26,6 @@ the notes of the version's GitHub Release.
 - Several household codes are used without a charge code only when they agree
   over every period held; spot days read for the history are kept.
 - Declared for Denmark only in the store (`countries: ["DK"]`, Gladys 5.3.0 or later).
+
+[Unreleased]: https://github.com/LM1LC3N7/gladys-energi-data-service/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/LM1LC3N7/gladys-energi-data-service/releases/tag/v0.1.1
